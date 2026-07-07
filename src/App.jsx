@@ -113,7 +113,7 @@ function App() {
 
   const universalUpload = async (fileData, originalName, mimeType) => {
     setCarregando(true);
-    setProgresso = 10;
+    setProgresso(10);
     try {
       const response = await fetch(`${BACKEND_URL}/upload-seguro`, {
         method: 'POST',
@@ -126,7 +126,7 @@ function App() {
         })
       });
 
-      setProgresso = 100;
+      setProgresso(100);
 
       if (response.ok) {
         setTimeout(() => {
