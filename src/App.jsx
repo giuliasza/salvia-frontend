@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-// Paleta de Cores do Figma (Soft / Terracota / Sage)
 const COLORS = {
   bg: '#FAF7F5',
   terracotta: '#C08D7C',
@@ -8,8 +7,87 @@ const COLORS = {
   border: '#D6C8C0',
   text: '#7A6B63',
   inputBg: '#FFFFFF',
-  error: '#D98E82'       // Terracota suave para avisos de erro
+  error: '#D98E82'
 };
+
+// CSS Injetado para Responsividade Absoluta (Desktop vs Mobile)
+const RESPONSIVE_CSS = `
+  .aegis-wrapper {
+    background-color: #EFEAE6;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: system-ui, -apple-system, sans-serif;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+  }
+  .aegis-container {
+    background-color: ${COLORS.bg};
+    width: 100%;
+    height: 100vh;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow-y: auto;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+  }
+  .recipes-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin-top: 20px;
+  }
+  .vault-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 15px;
+  }
+
+  /* --- MUDANÇA DE COMPORTAMENTO PARA DESKTOP (TELAS MAIORES) --- */
+  @media (min-width: 768px) {
+    .aegis-wrapper {
+      padding: 30px;
+    }
+    .aegis-container {
+      width: 95%;
+      max-width: 1150px;
+      height: 85vh;
+      max-height: 800px;
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0px 15px 45px rgba(0, 0, 0, 0.06);
+    }
+    .recipes-grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 25px;
+    }
+    .vault-grid {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+    .desktop-row {
+      display: flex;
+      gap: 30px;
+      align-items: flex-start;
+      margin-top: 20px;
+    }
+    .desktop-col-left {
+      flex: 1;
+    }
+    .desktop-col-right {
+      width: 350px;
+      background: white;
+      padding: 20px;
+      border-radius: 16px;
+      border: 1px solid ${COLORS.border};
+    }
+  }
+`;
 
 const RECIPES_DATA = {
   cheesecake: {
@@ -29,36 +107,13 @@ const RECIPES_DATA = {
 };
 
 function App() {
-  // --- MONITOR DE RESPONSIVIDADE DINÂMICO ---
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-
-  useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const isDesktop = windowWidth > 768;
-
-  // --- ESTADOS DE NAVEGAÇÃO ---
   const [currentPage, setCurrentPage] = useState('camuflagem');
   const [authMode, setAuthMode] = useState('signup');
   const [activeRecipe, setActiveRecipe] = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [viewMode, setViewMode] = useState('list');
 
-  // --- ESTADO DO SISTEMA DE NOTIFICAÇÃO (TOAST) ---
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-
-  // Função auxiliar para disparar avisos fluidos na tela
-  const triggerNotification = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast(prev => ({ ...prev, show: false }));
-    }, 3500);
-  };
-
-  // --- ESTADOS DE SISTEMA E INPUTS ---
   const [carregando, setCarregando] = useState(false);
   const [progresso, setProgresso] = useState(0);
   const [arquivosReais, setArquivosReais] = useState([]);
@@ -72,6 +127,11 @@ function App() {
   const canvasRef = useRef(null);
 
   const BACKEND_URL = "https://5olqwefd.up.railway.app";
+
+  const triggerNotification = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast(prev => ({ ...prev, show: false })), 3500);
+  };
 
   const verificarSeExisteCadastro = () => {
     return localStorage.getItem('salvia_user_password') !== null;
@@ -99,7 +159,6 @@ function App() {
     localStorage.setItem('salvia_user_name', regNome);
     localStorage.setItem('salvia_user_cpf', regCpf);
     localStorage.setItem('salvia_user_password', regSenha);
-
     triggerNotification("Perfil de acesso configurado com sucesso!", "success");
     setCurrentPage('vault');
   };
@@ -148,9 +207,7 @@ function App() {
           cpf: localStorage.getItem('salvia_user_cpf') || 'anonimo'
         })
       });
-
       setProgresso(100);
-
       if (response.ok) {
         setTimeout(() => {
           triggerNotification("Documento criptografado e salvo na Magalu Cloud!", "success");
@@ -162,7 +219,7 @@ function App() {
         triggerNotification("Erro na validação do arquivo pelo servidor.", "error");
       }
     } catch (error) {
-      triggerNotification("Falha de conexão. O servidor está offline?", "error");
+      triggerNotification("Falha de conexão com o servidor.", "error");
     } finally {
       setCarregando(false);
     }
@@ -199,11 +256,9 @@ function App() {
         link.click();
         document.body.removeChild(link);
         triggerNotification("Download iniciado com segurança!", "success");
-      } else {
-        triggerNotification("Não foi possível obter a autorização de download.", "error");
       }
     } catch (error) {
-      triggerNotification("Erro ao processar o download do arquivo.", "error");
+      triggerNotification("Erro ao processar o download.", "error");
     }
   };
 
@@ -214,50 +269,21 @@ function App() {
     }
   }, [viewMode, showUploadModal]);
 
-  // --- ESTILOS DE CONTAINER RESPONSIVOS ---
-  const dynamicContainerStyle = {
-    backgroundColor: COLORS.bg,
-    width: '100%',
-    maxWidth: isDesktop ? '1000px' : '420px',
-    height: isDesktop ? 'auto' : '90vh',
-    minHeight: isDesktop ? '680px' : 'auto',
-    borderRadius: '24px',
-    padding: isDesktop ? '40px' : '25px',
-    boxShadow: '0px 12px 40px rgba(0, 0, 0, 0.06)',
-    display: 'flex',
-    flexDirection: 'column',
-    position: 'relative',
-    overflowY: 'auto',
-    transition: 'all 0.3s ease'
-  };
-
-  // --- ESTILO DO COMPONENTE TOAST CUSTOMIZADO ---
   const toastStyle = {
-    position: 'absolute',
-    top: '20px',
-    left: '50%',
-    transform: 'translateX(-50%)',
+    position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)',
     backgroundColor: toast.type === 'success' ? COLORS.sage : COLORS.error,
-    color: 'white',
-    padding: '12px 24px',
-    borderRadius: '12px',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-    zIndex: 1000,
-    fontSize: '14px',
-    fontWeight: '600',
-    textAlign: 'center',
-    width: '85%',
-    maxWidth: '380px',
-    transition: 'all 0.3s ease-in-out',
-    opacity: toast.show ? 1 : 0,
-    visibility: toast.show ? 'visible' : 'hidden'
+    color: 'white', padding: '12px 24px', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+    zIndex: 1000, fontSize: '14px', fontWeight: '600', textAlign: 'center', width: '85%', maxWidth: '380px',
+    transition: 'all 0.3s ease-in-out', opacity: toast.show ? 1 : 0, visibility: toast.show ? 'visible' : 'hidden'
   };
 
   return (
-    <div style={responsiveWrapperStyle}>
-      <div style={dynamicContainerStyle}>
+    <div className="aegis-wrapper">
+      {/* Injeção de Estilo Responsivo Dinâmico */}
+      <style>{RESPONSIVE_CSS}</style>
 
-        {/* COMPONENTE DE NOTIFICAÇÃO EMBUTIDO (Adeus Alerts!) */}
+      <div className="aegis-container">
+
         <div style={toastStyle}>
           {toast.type === 'success' ? '✓ ' : '⚠️ '} {toast.message}
         </div>
@@ -272,11 +298,8 @@ function App() {
                 </h2>
                 <p style={{ color: COLORS.text, fontSize: '14px', marginBottom: '35px', textAlign: 'center' }}>Explore opções saudáveis e fáceis para o seu dia a dia.</p>
 
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: isDesktop ? '1fr 1fr 1fr' : '1fr',
-                  gap: '20px'
-                }}>
+                {/* Grid Responsivo automático controlado pelo CSS */}
+                <div className="recipes-grid">
                   {Object.keys(RECIPES_DATA).map((key) => (
                     <div key={key} style={recipeCardStyle}>
                       <h3 style={{ margin: '0 0 8px 0', color: COLORS.terracotta, fontSize: '16px' }}>{RECIPES_DATA[key].title}</h3>
@@ -359,37 +382,44 @@ function App() {
               {arquivosReais.length} documento(s) salvos em ambiente soberano
             </p>
 
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '15px',
-              marginTop: '15px'
-            }}>
+            <div className="vault-grid">
               <div style={cardStyle}><span style={{ fontSize: '20px' }}>📁</span><p style={cardTitleStyle}>Todos os Arquivos</p><span style={cardCountStyle}>{arquivosReais.length} Arq.</span></div>
               <div style={cardStyle}><span style={{ fontSize: '20px' }}>🛡️</span><p style={cardTitleStyle}>ID Usuária (CPF)</p><span style={{ ...cardCountStyle, color: COLORS.terracotta, fontWeight: '600' }}>{localStorage.getItem('salvia_user_cpf')}</span></div>
             </div>
 
-            <h4 style={{ color: COLORS.terracotta, marginTop: '30px', textAlign: 'left', marginBottom: '10px' }}>Arquivos Criptografados</h4>
+            {/* Layout inteligente de duas colunas paralelas que só ativa no Desktop */}
+            <div className="desktop-row">
+              <div className="desktop-col-left" style={{ flex: 1 }}>
+                <h4 style={{ color: COLORS.terracotta, marginTop: '20px', textAlign: 'left', marginBottom: '10px' }}>Arquivos Criptografados</h4>
+                <div style={{ overflowY: 'auto', maxHeight: '350px' }}>
+                  {arquivosReais.length === 0 ? (
+                    <p style={{ color: '#aaa', fontSize: '13px', textAlign: 'left', fontStyle: 'italic', marginTop: '10px' }}>Nenhum documento armazenado em nuvem.</p>
+                  ) : (
+                    arquivosReais.map((arq) => (
+                      <div key={arq.key} style={fileItemStyle}>
+                        <div style={{ textAlign: 'left', maxWidth: '75%' }}>
+                          <p style={{ margin: 0, fontWeight: '500', color: COLORS.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            📄 {arq.key.split('/').pop().length > 37 ? arq.key.split('/').pop().substring(37) : arq.key.split('/').pop()}
+                          </p>
+                          <span style={{ fontSize: '10px', color: '#aaa' }}>{(arq.tamanho / 1024).toFixed(1)} KB</span>
+                        </div>
+                        <button onClick={() => baixarDocumentoReal(arq.key)} style={baixarBtnStyle}>Baixar</button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', marginBottom: '60px' }}>
-              {arquivosReais.length === 0 ? (
-                <p style={{ color: '#aaa', fontSize: '13px', textAlign: 'left', fontStyle: 'italic', marginTop: '10px' }}>Nenhum documento armazenado em nuvem.</p>
-              ) : (
-                arquivosReais.map((arq) => (
-                  <div key={arq.key} style={fileItemStyle}>
-                    <div style={{ textAlign: 'left', maxWidth: '75%' }}>
-                      <p style={{ margin: 0, fontWeight: '500', color: COLORS.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        📄 {arq.key.split('/').pop().length > 37 ? arq.key.split('/').pop().substring(37) : arq.key.split('/').pop()}
-                      </p>
-                      <span style={{ fontSize: '10px', color: '#aaa' }}>{(arq.tamanho / 1024).toFixed(1)} KB</span>
-                    </div>
-                    <button onClick={() => baixarDocumentoReal(arq.key)} style={baixarBtnStyle}>Baixar</button>
-                  </div>
-                ))
-              )}
+              {/* Painel Lateral de Ações visível no Desktop */}
+              <div className="desktop-col-right" style={{ textAlign: 'left' }}>
+                <h4 style={{ color: COLORS.terracotta, margin: '0 0 10px 0' }}>Ações Rápidas</h4>
+                <p style={{ fontSize: '13px', color: COLORS.text, marginBottom: '20px' }}>Gerencie ou faça upload de novas mídias protegidas diretamente na Magalu Cloud.</p>
+                <button onClick={() => setShowUploadModal(true)} style={{ ...submitBtnStyle, marginTop: 0, width: '100%' }}>+ Adicionar Arquivo</button>
+              </div>
             </div>
 
-            <button onClick={() => setShowUploadModal(true)} style={fabStyle}>+</button>
+            {/* Botão flutuante mantido apenas no Mobile por CSS */}
+            <button onClick={() => setShowUploadModal(true)} className="mobile-fab" style={fabStyle}>+</button>
 
             {/* MODAL DE ENVIOS */}
             {showUploadModal && (
@@ -434,8 +464,7 @@ function App() {
   );
 }
 
-// --- CONFIGURAÇÕES DE ESTILO COMPLEMENTARES ---
-const responsiveWrapperStyle = { backgroundColor: '#EFEAE6', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' };
+// Estilos estáticos base
 const recipeCardStyle = { backgroundColor: 'white', border: `1px solid ${COLORS.border}`, borderRadius: '14px', padding: '20px', textAlign: 'left', display: 'flex', flexDirection: 'column', boxShadow: '0 2px 8px rgba(0,0,0,0.01)' };
 const verReceitaBtn = { width: '100%', padding: '10px 15px', backgroundColor: 'transparent', border: `1px solid ${COLORS.terracotta}`, color: COLORS.terracotta, borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' };
 const sairBtn = { border: `1.5px solid ${COLORS.terracotta}`, borderRadius: '8px', padding: '6px 14px', color: COLORS.terracotta, fontWeight: '600', fontSize: '12px', backgroundColor: 'transparent', cursor: 'pointer' };
