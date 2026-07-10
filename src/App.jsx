@@ -17,7 +17,7 @@ const RECIPES_DATA = {
   cheesecake: {
     title: "Cheesecake de Frutas Vermelhas",
     desc: "Uma sobremesa clássica, com base crocante de biscoito, recheio cremoso à base de cream cheese e uma calda azedinha artesanal.",
-    prep: "1. Triture os biscoitos e misture com manteiga derretida para forrar a forma.\n2. Bata o cream cheese com açúcar, ovos e raspas de limão.\n3. Despeje na forma e asse em banho-maria por 50 minutos.\n4. Deixe esfriar e cubra com a calda de morangos e amoras antes de gelar por 4 horas."
+    prep: "1. Triture os biscoitos e misture com manteiga derretida para forrar a forma.\n2. Bata o cream cheese com açúcar, ovos e raspas de limão.\n3. Despeje na forma e asse em banho-maria por 50 minutes.\n4. Deixe esfriar e cubra com a calda de morangos e amoras antes de gelar por 4 horas."
   },
   cenoura: {
     title: "Bolo de Cenoura Fofinho",
@@ -31,7 +31,6 @@ const RECIPES_DATA = {
 };
 
 function App() {
-  // --- RESPONSIVIDADE CONTROLADA PELO REACT ---
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
 
   useEffect(() => {
@@ -40,7 +39,6 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // --- ESTADOS DE NAVEGAÇÃO ---
   const [currentPage, setCurrentPage] = useState('camuflagem');
   const [authMode, setAuthMode] = useState('signup');
   const [selectedRecipeKey, setSelectedRecipeKey] = useState('');
@@ -114,13 +112,12 @@ function App() {
     }
   };
 
-  // --- FUNÇÃO PARA RESETAR A SENHA DE FORMA REAL NA APLICAÇÃO ---
   const handleResetarPerfilCompleto = () => {
     localStorage.removeItem('salvia_user_name');
     localStorage.removeItem('salvia_user_cpf');
     localStorage.removeItem('salvia_user_password');
     triggerNotification("Credenciais apagadas. Crie um novo acesso.", "success");
-    setAuthMode('signup'); // Força a volta para a tela de registro
+    setAuthMode('signup');
   };
 
   const carregarArquivosDoCofre = async () => {
@@ -132,7 +129,7 @@ function App() {
         setArquivosReais(dados.arquivos || []);
       }
     } catch (error) {
-      console.error("Erro ao conectar com a Magalu Cloud:", error);
+      console.error("Erro ao carregar repositório da nuvem:", error);
     }
   };
 
@@ -164,9 +161,11 @@ function App() {
           setProgresso(0);
           carregarArquivosDoCofre();
         }, 500);
+      } else {
+        triggerNotification("O servidor rejeitou o arquivo. Verifique os logs.", "error");
       }
     } catch (error) {
-      triggerNotification("Falha de conexão com o servidor.", "error");
+      triggerNotification("Falha de comunicação externa com o servidor.", "error");
     } finally {
       setCarregando(false);
     }
@@ -235,7 +234,7 @@ function App() {
     }
   };
 
-  // --- COMPORTAMENTO DO WRAPPER (SALA DE FUNDO) ---
+  // --- MODELAGEM DE ESTILOS EM ESTADO DINÂMICO ---
   const wrapperStyle = {
     backgroundColor: '#EFEAE6',
     width: '100vw',
@@ -248,11 +247,9 @@ function App() {
     boxSizing: 'border-box'
   };
 
-  // --- 🌟 CONTAINER ADAPTATIVO: COMPACTO NO INÍCIO, LARGO NO COFRE ---
   const containerStyle = {
     backgroundColor: COLORS.bg,
     width: '100%',
-    // Se for o cofre secreto, abre completo. Se for receita/login, fica compacto (460px)
     maxWidth: isDesktop ? (currentPage === 'vault' ? '1150px' : '460px') : '100%',
     height: isDesktop ? (currentPage === 'vault' ? '85vh' : 'auto') : '100vh',
     maxHeight: isDesktop ? '800px' : '100vh',
@@ -278,14 +275,18 @@ function App() {
 
   return (
     <div style={wrapperStyle}>
-      <div style={containerStyle}>
+      {/* 🌟 RESET DE CSS INJETADO PARA DESTRUIR O ESPAÇO EM BRANCO DO VITE BOILERPLATE */}
+      <style>{`
+        #root { width: 100% !important; height: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; display: flex !important; justify-content: center; align-items: center; }
+        body, html { margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100% !important; background-color: #EFEAE6 !important; overflow: hidden; }
+      `}</style>
 
-        {/* TOAST FLUIDO */}
+      <div style={containerStyle}>
         <div style={toastStyle}>
           {toast.type === 'success' ? '✓ ' : '⚠️ '} {toast.message}
         </div>
 
-        {/* ================= TELA 1: CAMUFLAGEM (COMPACTA) ================= */}
+        {/* ================= TELA 1: CAMUFLAGEM ================= */}
         {currentPage === 'camuflagem' && (
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center' }}>
             {!activeRecipe ? (
@@ -325,6 +326,7 @@ function App() {
           </div>
         )}
 
+        {/* ================= TELA 2: LOGIN / CADASTRO ================= */}
         {currentPage === 'auth' && (
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
             <div style={{ width: '100%', textAlign: 'left' }}>
@@ -356,11 +358,7 @@ function App() {
 
                   <button type="submit" style={submitBtnStyle}>Validar Credencial</button>
 
-                  <button
-                    type="button"
-                    onClick={handleResetarPerfilCompleto}
-                    style={resetBtnStyle}
-                  >
+                  <button type="button" onClick={handleResetarPerfilCompleto} style={resetBtnStyle}>
                     Resetar Credenciais (Criar nova chave)
                   </button>
                 </form>
@@ -369,6 +367,7 @@ function App() {
           </div>
         )}
 
+        {/* ================= TELA 3: COFRE DIGITAL REAL ================= */}
         {currentPage === 'vault' && (
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
@@ -429,6 +428,7 @@ function App() {
 
             {!isDesktop && <button onClick={() => setShowUploadModal(true)} style={fabStyle}>+</button>}
 
+            {/* MODAL DE ENVIOS */}
             {showUploadModal && (
               <div style={modalOverlay}>
                 <div style={modalContent}>
@@ -471,6 +471,7 @@ function App() {
   );
 }
 
+// Estilos Core Estruturais
 const dropdownSelectStyle = { width: '100%', padding: '14px', borderRadius: '12px', border: `1.5px solid ${COLORS.border}`, backgroundColor: 'white', color: COLORS.text, fontSize: '15px', outline: 'none', cursor: 'pointer', marginBottom: '20px', boxSizing: 'border-box' };
 const rightPanelDesktopStyle = { width: '340px', backgroundColor: 'white', padding: '25px', borderRadius: '16px', border: `1px solid ${COLORS.border}`, boxSizing: 'border-box' };
 const verReceitaBtn = { width: '100%', padding: '12px 18px', backgroundColor: 'transparent', border: `1px solid ${COLORS.terracotta}`, color: COLORS.terracotta, borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' };
@@ -496,7 +497,6 @@ const formStyle = { display: 'flex', flexDirection: 'column', gap: '14px', backg
 const labelStyle = { fontSize: '13px', fontWeight: '600', color: COLORS.text, marginBottom: '-4px' };
 const inputStyle = { padding: '11px 14px', borderRadius: '8px', border: `1px solid ${COLORS.border}`, outline: 'none', fontSize: '14px', color: COLORS.text, backgroundColor: COLORS.inputBg };
 const submitBtnStyle = { padding: '14px', backgroundColor: COLORS.terracotta, color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', marginTop: '10px', width: '100%', boxSizing: 'border-box' };
-
 const resetBtnStyle = { background: 'none', border: 'none', color: '#aaa', fontSize: '12px', cursor: 'pointer', marginTop: '10px', textDecoration: 'underline', fontFamily: FONT_SANS, textAlign: 'center' };
 
 export default App;
