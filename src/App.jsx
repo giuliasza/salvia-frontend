@@ -31,7 +31,7 @@ const RECIPES_DATA = {
 };
 
 function App() {
-  // --- RESPONSIVIDADE CONTROLADA PURAMENTE PELO REACT ---
+  // --- RESPONSIVIDADE CONTROLADA PELO REACT ---
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
 
   useEffect(() => {
@@ -40,7 +40,7 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // --- ESTADOS DE NAVEGAÇÃO E ENTRADAS ---
+  // --- ESTADOS DE NAVEGAÇÃO ---
   const [currentPage, setCurrentPage] = useState('camuflagem');
   const [authMode, setAuthMode] = useState('signup');
   const [selectedRecipeKey, setSelectedRecipeKey] = useState('');
@@ -60,7 +60,8 @@ function App() {
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  const streamRef = useRef(null); 
+  const streamRef = useRef(null);
+
   const BACKEND_URL = "https://aegis-backendd.up.railway.app";
 
   const triggerNotification = (message, type = 'success') => {
@@ -105,12 +106,21 @@ function App() {
   const handleLogin = (e) => {
     e.preventDefault();
     if (loginSenha === localStorage.getItem('salvia_user_password')) {
-      triggerNotification("Chave validada. Bem-vinda de volta!", "success");
+      triggerNotification("Chave validada. Bem-vinda ao painel!", "success");
       setCurrentPage('vault');
       setLoginSenha('');
     } else {
       triggerNotification("Chave de acesso incorreta.", "error");
     }
+  };
+
+  // --- FUNÇÃO PARA RESETAR A SENHA DE FORMA REAL NA APLICAÇÃO ---
+  const handleResetarPerfilCompleto = () => {
+    localStorage.removeItem('salvia_user_name');
+    localStorage.removeItem('salvia_user_cpf');
+    localStorage.removeItem('salvia_user_password');
+    triggerNotification("Credenciais apagadas. Crie um novo acesso.", "success");
+    setAuthMode('signup'); // Força a volta para a tela de registro
   };
 
   const carregarArquivosDoCofre = async () => {
@@ -171,7 +181,6 @@ function App() {
     }
   };
 
-  // --- CORREÇÃO DO BUG DA CÂMERA ESCURA EM PWA ---
   useEffect(() => {
     if (viewMode === 'camera' && showUploadModal) {
       navigator.mediaDevices.getUserMedia({
@@ -181,20 +190,14 @@ function App() {
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          // Força a execução contínua no ecossistema mobile/PWA
-          const playPromise = videoRef.current.play();
-          if (playPromise !== undefined) {
-            playPromise.catch(error => console.log("Autoplay bloqueado, tentando novamente:", error));
-          }
+          videoRef.current.play().catch(e => console.log(e));
         }
       })
-      .catch(err => {
-        triggerNotification("Permissão de câmera negada ou não suportada.", "error");
+      .catch(() => {
+        triggerNotification("Permissão de câmera negada.", "error");
         setViewMode('list');
       });
     }
-
-    // Desliga a câmera imediatamente quando fechar o modal ou mudar de aba
     return () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
@@ -225,14 +228,14 @@ function App() {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        triggerNotification("Download iniciado com segurança!", "success");
+        triggerNotification("Download iniciado!", "success");
       }
     } catch (error) {
-      triggerNotification("Erro ao processar o download.", "error");
+      triggerNotification("Erro no download.", "error");
     }
   };
 
-  // --- OBJETOS DE ESTILOS CONTROLADOS POR ESTADOS DO REACT ---
+  // --- COMPORTAMENTO DO WRAPPER (SALA DE FUNDO) ---
   const wrapperStyle = {
     backgroundColor: '#EFEAE6',
     width: '100vw',
@@ -245,51 +248,53 @@ function App() {
     boxSizing: 'border-box'
   };
 
+  // --- 🌟 CONTAINER ADAPTATIVO: COMPACTO NO INÍCIO, LARGO NO COFRE ---
   const containerStyle = {
     backgroundColor: COLORS.bg,
     width: '100%',
-    maxWidth: isDesktop ? '1150px' : '100%',
-    height: isDesktop ? '85vh' : '100vh',
+    // Se for o cofre secreto, abre completo. Se for receita/login, fica compacto (460px)
+    maxWidth: isDesktop ? (currentPage === 'vault' ? '1150px' : '460px') : '100%',
+    height: isDesktop ? (currentPage === 'vault' ? '85vh' : 'auto') : '100vh',
     maxHeight: isDesktop ? '800px' : '100vh',
     borderRadius: isDesktop ? '24px' : '0',
-    padding: isDesktop ? '40px' : '20px',
+    padding: isDesktop ? '40px' : '25px',
     boxShadow: isDesktop ? '0px 15px 45px rgba(0, 0, 0, 0.06)' : 'none',
     display: 'flex',
     flexDirection: 'column',
     position: 'relative',
     overflowY: 'auto',
     boxSizing: 'border-box',
-    fontFamily: FONT_SANS
+    fontFamily: FONT_SANS,
+    transition: 'max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1), height 0.35s ease'
   };
 
   const toastStyle = {
     position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)',
     backgroundColor: toast.type === 'success' ? COLORS.sage : COLORS.error,
     color: 'white', padding: '12px 24px', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-    zIndex: 1000, fontSize: '14px', fontWeight: '600', textAlign: 'center', width: '85%', maxWidth: '380px',
-    transition: 'all 0.3s ease-in-out', opacity: toast.show ? 1 : 0, visibility: toast.show ? 'visible' : 'hidden'
+    zIndex: 1000, fontSize: '14px', fontWeight: '600', textAlign: 'center', width: '85%', maxWidth: '340px',
+    transition: 'all 0.3s ease', opacity: toast.show ? 1 : 0, visibility: toast.show ? 'visible' : 'hidden'
   };
 
   return (
     <div style={wrapperStyle}>
       <div style={containerStyle}>
 
-        {/* TOAST NOTIFICATION REAL */}
+        {/* TOAST FLUIDO */}
         <div style={toastStyle}>
           {toast.type === 'success' ? '✓ ' : '⚠️ '} {toast.message}
         </div>
 
-        {/* ================= TELA 1: CAMUFLAGEM (DROPDOWN REAL) ================= */}
+        {/* ================= TELA 1: CAMUFLAGEM (COMPACTA) ================= */}
         {currentPage === 'camuflagem' && (
-          <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center' }}>
             {!activeRecipe ? (
-              <div style={{ width: '100%', maxWidth: '500px', textAlign: 'center' }}>
-                <h2 style={{ color: COLORS.terracotta, marginBottom: '10px', fontWeight: '400', fontSize: '32px', fontFamily: FONT_SERIF }}>
+              <div style={{ width: '100%', textAlign: 'center' }}>
+                <h2 style={{ color: COLORS.terracotta, marginBottom: '10px', fontWeight: '400', fontSize: '30px', fontFamily: FONT_SERIF }}>
                   Minhas Receitas Diárias
                 </h2>
-                <p style={{ color: COLORS.text, fontSize: '15px', marginBottom: '30px' }}>Selecione abaixo uma receita do seu caderno digital para conferir os detalhes.</p>
+                <p style={{ color: COLORS.text, fontSize: '14px', marginBottom: '25px', lineHeight: '1.4' }}>Selecione abaixo uma receita do seu caderno digital para conferir os detalhes.</p>
 
-                {/* SELECT DROPDOWN */}
                 <select
                   style={dropdownSelectStyle}
                   value={selectedRecipeKey}
@@ -306,14 +311,13 @@ function App() {
                 </button>
               </div>
             ) : (
-              // TELA DE DESCRIÇÃO DA RECEITA
-              <div style={{ textAlign: 'left', maxWidth: '750px', width: '100%' }}>
-                <button onClick={() => { setActiveRecipe(null); setSelectedRecipeKey(''); }} style={{ ...verReceitaBtn, marginBottom: '25px', width: 'auto' }}>← Voltar para a Seleção</button>
-                <h2 style={{ color: COLORS.terracotta, margin: '0 0 10px 0', fontSize: '28px', fontFamily: FONT_SERIF }}>{RECIPES_DATA[activeRecipe].title}</h2>
-                <p style={{ color: COLORS.text, fontSize: '15px', lineHeight: '1.5', marginBottom: '20px' }}>{RECIPES_DATA[activeRecipe].desc}</p>
+              <div style={{ textAlign: 'left', width: '100%' }}>
+                <button onClick={() => { setActiveRecipe(null); setSelectedRecipeKey(''); }} style={{ ...verReceitaBtn, marginBottom: '20px', width: 'auto' }}>← Voltar</button>
+                <h2 style={{ color: COLORS.terracotta, margin: '0 0 10px 0', fontSize: '24px', fontFamily: FONT_SERIF }}>{RECIPES_DATA[activeRecipe].title}</h2>
+                <p style={{ color: COLORS.text, fontSize: '14px', lineHeight: '1.5', marginBottom: '20px' }}>{RECIPES_DATA[activeRecipe].desc}</p>
 
-                <h4 style={{ color: COLORS.text, margin: '20px 0 10px 0', fontSize: '16px', fontWeight: '600' }}>Modo de Preparo Avançado:</h4>
-                <p style={{ color: COLORS.text, whiteSpace: 'pre-line', fontSize: '14px', lineHeight: '1.7', backgroundColor: '#FFF', padding: '25px', borderRadius: '14px', border: `1px solid ${COLORS.border}` }}>
+                <h4 style={{ color: COLORS.text, margin: '15px 0 10px 0', fontSize: '15px', fontWeight: '600' }}>Modo de Preparo Avançado:</h4>
+                <p style={{ color: COLORS.text, whiteSpace: 'pre-line', fontSize: '13px', lineHeight: '1.6', backgroundColor: '#FFF', padding: '20px', borderRadius: '12px', border: `1px solid ${COLORS.border}` }}>
                   {RECIPES_DATA[activeRecipe].prep}
                 </p>
               </div>
@@ -321,44 +325,50 @@ function App() {
           </div>
         )}
 
-        {/* ================= TELA 2: LOGIN / CADASTRO ================= */}
         {currentPage === 'auth' && (
-          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-            <div style={{ width: '100%', maxWidth: '420px', textAlign: 'left' }}>
-              <button onClick={() => { setCurrentPage('camuflagem'); setSelectedRecipeKey(''); }} style={{ ...verReceitaBtn, marginBottom: '20px', width: 'auto' }}>← Voltar ao Início</button>
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
+            <div style={{ width: '100%', textAlign: 'left' }}>
+              <button onClick={() => { setCurrentPage('camuflagem'); setSelectedRecipeKey(''); }} style={{ ...verReceitaBtn, marginBottom: '20px', width: 'auto' }}>← Voltar</button>
 
               {authMode === 'signup' ? (
                 <form onSubmit={handleCadastro} style={formStyle}>
-                  <h3 style={{ color: COLORS.terracotta, margin: '0 0 10px 0', fontSize: '22px', fontFamily: FONT_SERIF }}>Criar Perfil de Acesso</h3>
-                  <p style={{ color: COLORS.text, fontSize: '13px', marginBottom: '20px' }}>Registre os dados para sincronizar suas anotações culinárias salvas.</p>
+                  <h3 style={{ color: COLORS.terracotta, margin: '0 0 5px 0', fontSize: '22px', fontFamily: FONT_SERIF }}>Criar Perfil de Acesso</h3>
+                  <p style={{ color: COLORS.text, fontSize: '13px', marginBottom: '15px' }}>Registre os dados para sincronizar suas receitas preferidas.</p>
 
                   <label style={labelStyle}>Nome Completo</label>
-                  <input type="text" value={regNome} onChange={(e) => setRegNome(e.target.value)} style={inputStyle} placeholder="Nome de identificação" required />
+                  <input type="text" value={regNome} onChange={(e) => setRegNome(e.target.value)} style={inputStyle} placeholder="Nome do perfil" required />
 
                   <label style={labelStyle}>CPF de Registro</label>
                   <input type="text" value={regCpf} onChange={(e) => setRegCpf(e.target.value)} style={inputStyle} placeholder="Apenas números" required />
 
                   <label style={labelStyle}>Senha Digital</label>
-                  <input type="password" value={regSenha} onChange={(e) => setRegSenha(e.target.value)} style={inputStyle} placeholder="Digite sua senha numérica" required />
+                  <input type="password" value={regSenha} onChange={(e) => setRegSenha(e.target.value)} style={inputStyle} placeholder="Crie sua senha numérica" required />
 
                   <button type="submit" style={submitBtnStyle}>Configurar e Avançar</button>
                 </form>
               ) : (
                 <form onSubmit={handleLogin} style={formStyle}>
-                  <h3 style={{ color: COLORS.terracotta, margin: '0 0 10px 0', fontSize: '22px', fontFamily: FONT_SERIF }}>Desbloquear Receita Restrita</h3>
-                  <p style={{ color: COLORS.text, fontSize: '13px', marginBottom: '20px' }}>Insira sua chave cadastrada para visualizar as proporções de legumes.</p>
+                  <h3 style={{ color: COLORS.terracotta, margin: '0 0 5px 0', fontSize: '22px', fontFamily: FONT_SERIF }}>Desbloquear Receita Restrita</h3>
+                  <p style={{ color: COLORS.text, fontSize: '13px', marginBottom: '15px' }}>Insira sua chave cadastrada para visualizar as proporções de legumes.</p>
 
                   <label style={labelStyle}>Senha de Acesso</label>
                   <input type="password" value={loginSenha} onChange={(e) => setLoginSenha(e.target.value)} style={inputStyle} placeholder="Digite sua senha numérica" required />
 
                   <button type="submit" style={submitBtnStyle}>Validar Credencial</button>
+
+                  <button
+                    type="button"
+                    onClick={handleResetarPerfilCompleto}
+                    style={resetBtnStyle}
+                  >
+                    Resetar Credenciais (Criar nova chave)
+                  </button>
                 </form>
               )}
             </div>
           </div>
         )}
 
-        {/* ================= TELA 3: COFRE DIGITAL REAL RESPONSIVO EM REACT ================= */}
         {currentPage === 'vault' && (
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
@@ -386,10 +396,7 @@ function App() {
               <div style={cardStyle}><span style={{ fontSize: '22px' }}>🛡️</span><p style={cardTitleStyle}>Sessão Criptografada</p><span style={{ ...cardCountStyle, color: COLORS.terracotta, fontWeight: '700' }}>{localStorage.getItem('salvia_user_cpf')}</span></div>
             </div>
 
-            {/* Layout Condicional React (Flex Row no PC, Coluna Única no Celular) */}
             <div style={{ display: 'flex', flexDirection: isDesktop ? 'row' : 'column', gap: '40px', marginTop: '30px', alignItems: 'flex-start' }}>
-
-              {/* Painel Esquerdo: Lista de Arquivos */}
               <div style={{ flex: 1, width: '100%' }}>
                 <h4 style={{ color: COLORS.terracotta, fontSize: '20px', textAlign: 'left', margin: '0 0 15px 0', fontFamily: FONT_SERIF }}>Repositório de Evidências Blindadas</h4>
                 <div style={{ overflowY: 'auto', maxHeight: '350px' }}>
@@ -411,7 +418,6 @@ function App() {
                 </div>
               </div>
 
-              {/* Painel Direito: Ações (SÓ EXIBE NO DESKTOP VIA CONFIGURAÇÃO REACT) */}
               {isDesktop && (
                 <div style={rightPanelDesktopStyle}>
                   <h4 style={{ color: COLORS.terracotta, margin: '0 0 10px 0', fontSize: '18px', fontFamily: FONT_SERIF }}>Painel do Operador</h4>
@@ -421,10 +427,8 @@ function App() {
               )}
             </div>
 
-            {/* No celular exibe o Botão Flutuante (FAB) */}
             {!isDesktop && <button onClick={() => setShowUploadModal(true)} style={fabStyle}>+</button>}
 
-            {/* MODAL DE ENVIOS (CÂMERA CORRIGIDA) */}
             {showUploadModal && (
               <div style={modalOverlay}>
                 <div style={modalContent}>
@@ -438,14 +442,7 @@ function App() {
                       </label>
                     ) : (
                       <div style={{ width: '100%', textAlign: 'center' }}>
-                        {/* Correção estrutural do elemento de captura de mídia */}
-                        <video
-                          ref={videoRef}
-                          autoPlay
-                          playsInline
-                          muted
-                          style={{ width: '100%', borderRadius: '12px', backgroundColor: '#000', display: 'block' }}
-                        />
+                        <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', borderRadius: '12px', backgroundColor: '#000', display: 'block' }} />
                         <canvas ref={canvasRef} style={{ display: 'none' }} />
                         <button onClick={capturarFoto} style={actionBtn}>Bater Foto do Documento</button>
                         <button onClick={() => setViewMode('list')} style={{ ...actionBtn, backgroundColor: '#ccc', color: '#333' }}>Cancelar Câmera</button>
@@ -474,9 +471,8 @@ function App() {
   );
 }
 
-// Estilos Core Estruturais Objetificados
 const dropdownSelectStyle = { width: '100%', padding: '14px', borderRadius: '12px', border: `1.5px solid ${COLORS.border}`, backgroundColor: 'white', color: COLORS.text, fontSize: '15px', outline: 'none', cursor: 'pointer', marginBottom: '20px', boxSizing: 'border-box' };
-const rightPanelDesktopStyle = { width: '380px', backgroundColor: 'white', padding: '25px', borderRadius: '16px', border: `1px solid ${COLORS.border}`, boxSizing: 'border-box' };
+const rightPanelDesktopStyle = { width: '340px', backgroundColor: 'white', padding: '25px', borderRadius: '16px', border: `1px solid ${COLORS.border}`, boxSizing: 'border-box' };
 const verReceitaBtn = { width: '100%', padding: '12px 18px', backgroundColor: 'transparent', border: `1px solid ${COLORS.terracotta}`, color: COLORS.terracotta, borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' };
 const sairBtn = { border: `1.5px solid ${COLORS.terracotta}`, borderRadius: '8px', padding: '8px 16px', color: COLORS.terracotta, fontWeight: '700', fontSize: '12px', backgroundColor: 'transparent', cursor: 'pointer' };
 const searchStyle = { width: '100%', padding: '14px 45px 14px 20px', borderRadius: '12px', border: `1.5px solid ${COLORS.border}`, backgroundColor: COLORS.inputBg, color: COLORS.text, fontSize: '15px', outline: 'none', boxSizing: 'border-box' };
@@ -489,16 +485,18 @@ const fileItemStyle = { display: 'flex', justifyContent: 'space-between', alignI
 const baixarBtnStyle = { backgroundColor: 'transparent', border: `1px solid ${COLORS.sage}`, color: COLORS.sage, borderRadius: '6px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' };
 const fabStyle = { position: 'absolute', bottom: '25px', right: '25px', width: '56px', height: '56px', borderRadius: '28px', backgroundColor: COLORS.terracotta, color: 'white', fontSize: '30px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(192,141,124,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' };
 const modalOverlay = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', zIndex: 100 };
-const modalContent = { backgroundColor: COLORS.bg, padding: '25px', borderRadius: '20px', width: '100%', maxWidth: '440px' };
+const modalContent = { backgroundColor: COLORS.bg, padding: '25px', borderRadius: '20px', width: '100%', maxWidth: '420px' };
 const modalDashStyle = { backgroundColor: 'white', padding: '20px', borderRadius: '16px', border: `1px solid ${COLORS.border}` };
 const uploadAreaStyle = { border: `1.5px dashed ${COLORS.terracotta}`, borderRadius: '12px', padding: '35px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', color: COLORS.terracotta, cursor: 'pointer' };
 const cameraToggleBtn = { marginTop: '8px', backgroundColor: 'transparent', border: `1px solid ${COLORS.terracotta}`, color: COLORS.terracotta, borderRadius: '6px', padding: '8px 16px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' };
 const actionBtn = { width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: COLORS.sage, color: 'white', marginTop: '10px', fontWeight: 'bold', cursor: 'pointer' };
 const cancelBtn = { flex: 1, padding: '12px', borderRadius: '10px', border: `1.5px solid ${COLORS.border}`, backgroundColor: 'transparent', color: COLORS.text, cursor: 'pointer', fontSize: '14px', fontWeight: '500' };
 
-const formStyle = { display: 'flex', flexDirection: 'column', gap: '14px', backgroundColor: 'white', padding: '30px', borderRadius: '18px', border: `1px solid ${COLORS.border}`, boxSizing: 'border-box' };
+const formStyle = { display: 'flex', flexDirection: 'column', gap: '14px', backgroundColor: 'white', padding: '25px', borderRadius: '16px', border: `1px solid ${COLORS.border}`, boxSizing: 'border-box' };
 const labelStyle = { fontSize: '13px', fontWeight: '600', color: COLORS.text, marginBottom: '-4px' };
 const inputStyle = { padding: '11px 14px', borderRadius: '8px', border: `1px solid ${COLORS.border}`, outline: 'none', fontSize: '14px', color: COLORS.text, backgroundColor: COLORS.inputBg };
-const submitBtnStyle = { padding: '14px', backgroundColor: COLORS.terracotta, color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', width: '100%', boxSizing: 'border-box' };
+const submitBtnStyle = { padding: '14px', backgroundColor: COLORS.terracotta, color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', marginTop: '10px', width: '100%', boxSizing: 'border-box' };
+
+const resetBtnStyle = { background: 'none', border: 'none', color: '#aaa', fontSize: '12px', cursor: 'pointer', marginTop: '10px', textDecoration: 'underline', fontFamily: FONT_SANS, textAlign: 'center' };
 
 export default App;
