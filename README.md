@@ -1,16 +1,51 @@
-# React + Vite
+# 🌿 Salvia (Front-end)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> 🥉 **3º Lugar Geral no HackaWoman - UFPE (2026)** 🏆
 
-Currently, two official plugins are available:
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
+![Magalu Cloud](https://img.shields.io/badge/Magalu_Cloud-0080FF?style=for-the-badge&logo=cloud&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+O **Salvia** é o MVP de um Progressive Web App (PWA) desenvolvido durante o hackathon HackaWoman 2026, na Universidade Federal de Pernambuco (UFPE). 
 
-## React Compiler
+A plataforma foi construída com foco em acessibilidade e eficiência, utilizando Inteligência Artificial (OCR) para automatizar a leitura de arquivos e uma arquitetura robusta de nuvem para armazenamento.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+*(📸 Insira aqui um print ou GIF da interface do projeto rodando)*
 
-## Expanding the ESLint configuration
+## ✨ Principais Funcionalidades
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **Experiência PWA:** Interface responsiva e fluida, permitindo o uso com experiência de aplicativo nativo tanto no desktop quanto no mobile.
+- **Leitura Inteligente de Arquivos:** Integração com IA de OCR para extração automática de dados em imagens/documentos.
+- **Armazenamento Seguro na Nuvem:** Upload e gestão de arquivos utilizando a arquitetura de Object Storage.
+
+## 🛠️ Stack Tecnológica e Arquitetura
+
+O ecossistema do Salvia foi dividido entre este repositório (Front-end) e a API (Back-end), utilizando as seguintes tecnologias:
+
+### Front-end (Este repositório)
+- **Framework:** React.js
+- **Deploy:** Vercel
+
+### Back-end & Inteligência Artificial
+- **Linguagem:** Python
+- **IA/OCR:** `pytesseract` (Extração de textos e leitura de arquivos)
+- **Testes de API:** Postman
+- **Deploy:** Railway
+
+### Infraestrutura & Cloud
+- **Armazenamento:** Object Storage da Magalu Cloud
+
+## 🚀 Como rodar o projeto localmente
+
+Para rodar o front-end do Salvia na sua máquina, siga os passos abaixo:
+
+### Pré-requisitos
+- [Node.js](https://nodejs.org/) instalado.
+- [Git](https://git-scm.com/) instalado.
+
+### Passo a Passo
+
+1. Clone este repositório:
+```bash
+git clone [https://github.com/giuliasza/salvia-frontend.git](https://github.com/giuliasza/salvia-frontend.git)
